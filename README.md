@@ -2,5 +2,8 @@
 An assignment for a simple shell for CS450
 
 ## Group Members
-Write the names of your group members here
-# lobo-shell-project
+Luis Galvez
+Cristian Villalobos
+Irving Lopez
+
+ # lobo-shell-project
