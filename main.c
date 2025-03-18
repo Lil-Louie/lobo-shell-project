@@ -21,13 +21,39 @@ int main() {
     // or some other input error occurs
     while( fgets(line, MAX_LINE_CHARS, stdin) ) {
         int num_words = split_cmd_line(line, line_words);
+        int num_cmds = split_pipes(line, line_words);
 
-        for (int i=0; i < num_words; i++) {
-            printf("%s\n", line_words[i]);
+        if (num_cmds == 1) { // Single command, no pipe
+            pid_t pid = fork();
+            if (pid == -1) {
+                perror("fork failed");
+                exit(EXIT_FAILURE);
+            }
+            if (pid == 0) {
+                execute_command(line_words[0]);
+            }
+            waitpid(pid, NULL, 0);
+        } else { // Handle piped commands
+            execute_piped_commands(line_words, num_cmds);
         }
+
+        pid_t pid = fork();
+        if (pid == -1) {
+            perror("fork failed");
+            exit(EXIT_FAILURE);
+        }
+        if (pid == 0) { 
+            // Child process
+            execvp(line_words[0], line_words);
+            perror("exec failed");
+            exit(EXIT_FAILURE);
+        } else { 
+            // Parent process
+            int status;
+            waitpid(pid, &status, 0);
+        }
+
     }
 
     return 0;
 }
-
-
