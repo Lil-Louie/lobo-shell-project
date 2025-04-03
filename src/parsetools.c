@@ -39,17 +39,40 @@ char* trim(char* str) {
 // Returns the number of words
 //
 int split_cmd_line(char* line, char** list_to_populate) {
-   char* saveptr;  // for strtok_r; see http://linux.die.net/man/3/strtok_r
-   char* delimiters = " \t\n"; // whitespace
-   int i = 0;
+    int i = 0;
+    char* ptr = line;
+    int in_quotes = 0;
 
-   list_to_populate[0] = strtok_r(line, delimiters, &saveptr);
+    while (*ptr != '\0') {
+        // Skip leading spaces
+        while (isspace((unsigned char)*ptr)) ptr++;
 
-   while(list_to_populate[i] != NULL && i < MAX_LINE_WORDS - 1)  {
-       list_to_populate[++i] = strtok_r(NULL, delimiters, &saveptr);
-   };
-   return i;
+        if (*ptr == '\0') break;
+
+        char* start = ptr;
+        if (*ptr == '"') {
+            in_quotes = 1;
+            start = ++ptr; // skip opening quote
+            while (*ptr && *ptr != '"') ptr++;
+        } else {
+            while (*ptr && !isspace((unsigned char)*ptr)) ptr++;
+        }
+
+        // Null-terminate the token
+        if (*ptr != '\0') {
+            *ptr = '\0';
+            ptr++;
+        }
+
+        list_to_populate[i++] = start;
+
+        if (in_quotes) in_quotes = 0;
+    }
+
+    list_to_populate[i] = NULL;
+    return i;
 }
+
 
 
 
