@@ -18,7 +18,7 @@ int main() {
     char* line_words[MAX_LINE_WORDS + 1];
     // holds the commands seperated based on pipes
     char* cmds[MAX_LINE_WORDS +1];
-    
+    // Copy of buffer for reading one line of input
     char line_copy[MAX_LINE_CHARS ];
 
 
@@ -29,7 +29,7 @@ int main() {
         int num_words = split_cmd_line(line, line_words);
         int num_cmds = split_pipes(line_copy, cmds);
 
-        if (num_cmds == 1) { // Single command, no pipe
+        if (num_cmds == 1) { 
             pid_t pid = fork();
             if (pid == -1) {
                 perror("fork failed");
@@ -42,7 +42,7 @@ int main() {
             }  
             int status;
             waitpid(pid, &status, 0);
-            } else if (num_cmds > 1){ // Handle piped commands
+            } else if (num_cmds > 1){ 
             execute_piped_commands(cmds, num_cmds);
         }
     }
