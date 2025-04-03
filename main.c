@@ -18,12 +18,16 @@ int main() {
     char* line_words[MAX_LINE_WORDS + 1];
     // holds the commands seperated based on pipes
     char* cmds[MAX_LINE_WORDS +1];
+    
+    char line_copy[MAX_LINE_CHARS ];
+
 
     // Loop until user hits Ctrl-D (end of input)
     // or some other input error occurs
     while( fgets(line, MAX_LINE_CHARS, stdin) ) {
+        strcpy(line_copy, line);   
         int num_words = split_cmd_line(line, line_words);
-        int num_cmds = split_pipes(line, cmds);
+        int num_cmds = split_pipes(line_copy, cmds);
 
         if (num_cmds == 1) { // Single command, no pipe
             pid_t pid = fork();
@@ -38,7 +42,7 @@ int main() {
             }  
             int status;
             waitpid(pid, &status, 0);
-            } else { // Handle piped commands
+            } else if (num_cmds > 1){ // Handle piped commands
             execute_piped_commands(cmds, num_cmds);
         }
     }
