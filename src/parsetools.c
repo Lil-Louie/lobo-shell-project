@@ -8,7 +8,7 @@
 #include "constants.h"
 #include <ctype.h> 
 #include "parsetools.h"
-
+#include <fcntl.h>
 int const MAX_LINE = 1024;
 int const MAX_ARGS = 10;
 
@@ -111,6 +111,8 @@ void execute_piped_commands(char** list_of_cmds, int num_cmds) {
     int pipes[num_cmds - 1][2];  
     pid_t pids[num_cmds];
 
+
+
     // Create the pipes
     for (int i = 0; i < num_cmds - 1; i++) {
         if (pipe(pipes[i]) == -1) {
@@ -118,7 +120,7 @@ void execute_piped_commands(char** list_of_cmds, int num_cmds) {
             exit(EXIT_FAILURE);
         }
     }
-
+        //Debugging
         for (int i  = 0; i < 5; i++){
             fprintf(stdout, "Command #%d: %s\n", i, list_of_cmds[i]);
         }
@@ -145,6 +147,40 @@ void execute_piped_commands(char** list_of_cmds, int num_cmds) {
 
             char* cmd_args[MAX_LINE_WORDS];
             split_cmd_line(list_of_cmds[i], cmd_args);
+
+
+            //check for redirection
+            for (int k = 0; cmd_args[k] != NULL; ++k) {
+                printf(stdout, "redirection symbol: %s\nfile: %s", cmd_args[k], cmd_args[k+1]);
+                if (strcmp(cmd_args[k], ">") == 0 || strcmp(cmd_args[k], ">>") == 0) {
+                    int fd;
+                    int flags = O_WRONLY | O_CREAT;
+                    if (strcmp(cmd_args[k], ">") == 0)
+                        flags |= O_TRUNC;
+                    else
+                        flags |= O_APPEND;
+
+                    fd = open(cmd_args[k + 1], flags, 0644);
+                    if (fd < 0) syserror("open for output redirection");
+                    dup2(fd, STDOUT_FILENO);
+                    close(fd);
+
+                    cmd_args[k] = NULL;  // Remove redirection from args
+                    break;
+                } else if (strcmp(cmd_args[k], "<") == 0) {
+                    int fd = open(cmd_args[k + 1], O_RDONLY);
+                    if (fd < 0) syserror("open for input redirection");
+                    dup2(fd, STDIN_FILENO);
+                    close(fd);
+
+                    cmd_args[k] = NULL;
+                    break;
+                }
+            }
+
+
+
+
             fprintf(stderr, "Exec #%d: %s\n", i, cmd_args[0]);
             execvp(cmd_args[0], cmd_args);
             syserror("Could not exec command");
