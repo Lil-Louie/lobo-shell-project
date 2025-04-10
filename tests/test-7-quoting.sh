@@ -17,8 +17,7 @@ rm -f $OUT $EOUT
 cat >$LOG << 'EOF'
 Commands:
 ---------
-echo "A B C > tests/output/shouldnt-exist"
----------
+:---------
 EOF
 
 #
@@ -38,11 +37,11 @@ EOF
 #
 # Analyze results
 #
-if [ -f tests/output/shouldnt-exist ]; then
+if [ -f testsss/output/shouldnt-exist ]; then
     echo "tests/output/shouldnt-exist exists" >> $LOG
-    ls -al tests/output/shouldnt-exist >> $LOG 2>&1
+    ls -al testsss/output/shouldnt-exist >> $LOG 2>&1
     echo "FAIL $TEST"
-    rm -f tests/output/shouldnt-exist
+    rm -f testsss/output/shouldnt-exist
     exit
 fi
 

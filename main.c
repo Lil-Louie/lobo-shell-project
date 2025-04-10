@@ -34,7 +34,9 @@ int main() {
         int num_words = split_cmd_line(line, line_words);
         int num_cmds = split_pipes(line_copy, cmds);
 
-        if (num_cmds == 1) { 
+
+        if (num_cmds == 1) {
+            //printf("\n%d num commands: \n", num_cmds);
             pid_t pid = fork();
             if (pid == -1) {
                 perror("fork failed");
@@ -62,7 +64,7 @@ int main() {
                         dup2(fd, STDOUT_FILENO);
                         close(fd);
                         line_words[i] = NULL;  // terminate args before redirection symbol
-                        break;  // stop parsing after redirection
+                        //break;  // stop parsing after redirection
                     } else if (strcmp(line_words[i], "<") == 0) {
                         int fd = open(line_words[i + 1], O_RDONLY);
                         if (fd < 0) {
@@ -73,7 +75,7 @@ int main() {
                         dup2(fd, STDIN_FILENO);
                         close(fd);
                         line_words[i] = NULL;  // terminate args before redirection symbol
-                        break;  // stop parsing after redirection
+                        //break;  // stop parsing after redirection
                     }
                 }
 
