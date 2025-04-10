@@ -47,7 +47,7 @@ EOF
 #
 # Analyze results
 #
-rm -f tests/output/tmp tests/output/etmp
+rm -f testsss/output/tmp testsss/output/etmp
 
 diff $EOUT $OUT >> $LOG
 echo "---------" >> $LOG

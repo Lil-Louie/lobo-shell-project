@@ -48,22 +48,22 @@ EOF
 #
 # Analyze results
 #
-if [ ! -f tests/output/tmp ] || [ ! -s tests/output/tmp ]; then
+if [ ! -f testsss/output/tmp ] || [ ! -s testsss/output/tmp ]; then
     echo "tests/output/tmp either not created or empty" >> $LOG
-    ls -al tests/output/tmp >> $LOG 2>&1
+    ls -al testsss/output/tmp >> $LOG 2>&1
     echo "FAIL $TEST"
     exit 1
 fi
 
-if [ -z $(find tests/output/tmp -perm 664) ]; then
+if [ -z $(find testsss/output/tmp -perm 664) ]; then
     echo "Our umask is:" >> $LOG
     umask >> $LOG
     echo "File permissions are wrong for this umask:" >> $LOG
-    stat tests/output/tmp >> $LOG 2>&1
+    stat testsss/output/tmp >> $LOG 2>&1
     echo "FAIL $TEST"
     exit 2
 fi
-rm -f tests/output/tmp tests/output/etmp
+rm -f testsss/output/tmp testsss/output/etmp
 
 diff $EOUT $OUT >> $LOG
 echo "---------" >> $LOG

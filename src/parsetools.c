@@ -8,7 +8,7 @@
 #include "constants.h"
 #include <ctype.h> 
 #include "parsetools.h"
-
+#include <fcntl.h>
 int const MAX_LINE = 1024;
 int const MAX_ARGS = 10;
 
@@ -98,7 +98,7 @@ int split_pipes(char* line, char** list_of_cmds) {
     // Last command after the final pipe
     list_of_cmds[i++] = trim(start);
     list_of_cmds[i] = NULL;
-
+    //printf("\nGUASHA\n");
     return i;
 }
 
@@ -118,11 +118,13 @@ void execute_piped_commands(char** list_of_cmds, int num_cmds) {
             exit(EXIT_FAILURE);
         }
     }
+        //Debugging
+    //printf("\n%d num commands: \n", num_cmds);
+        for (int i  = 0; i < num_cmds; i++){
+            //fprintf(stdout, "Command #%d: %s\n", i, list_of_cmds[i]);
 
-        for (int i  = 0; i < 5; i++){
-            fprintf(stdout, "Command #%d: %s\n", i, list_of_cmds[i]);
         }
-
+    //printf("\nprintfff\n");
     // Fork processes for each command
     for (int i = 0; i < num_cmds; i++) {
         pids[i] = fork();
@@ -130,14 +132,12 @@ void execute_piped_commands(char** list_of_cmds, int num_cmds) {
             perror("fork failed");
             exit(EXIT_FAILURE);
         }
-
         if (pids[i] == 0) {  // child
 
             if (i > 0)
                 dup2(pipes[i - 1][0], STDIN_FILENO);
             if (i < num_cmds - 1)
                 dup2(pipes[i][1], STDOUT_FILENO);
-
             for (int j = 0; j < num_cmds - 1; j++) {
                 close(pipes[j][0]);
                 close(pipes[j][1]);
@@ -145,8 +145,39 @@ void execute_piped_commands(char** list_of_cmds, int num_cmds) {
 
             char* cmd_args[MAX_LINE_WORDS];
             split_cmd_line(list_of_cmds[i], cmd_args);
-            fprintf(stderr, "Exec #%d: %s\n", i, cmd_args[0]);
+
+            //check for redirection
+            for (int k = 0; cmd_args[k] != NULL; ++k) {
+                printf(stdout, "redirection symbol: %s\nfile: %s", cmd_args[k], cmd_args[k+1]);
+                if (strcmp(cmd_args[k], ">") == 0 || strcmp(cmd_args[k], ">>") == 0) {
+                    int fd;
+                    int flags = O_WRONLY | O_CREAT;
+                    if (strcmp(cmd_args[k], ">") == 0)
+                        flags |= O_TRUNC;
+                    else
+                        flags |= O_APPEND;
+
+                    fd = open(cmd_args[k + 1], flags, 0644);
+                    if (fd < 0) syserror("open for output redirection");
+                    dup2(fd, STDOUT_FILENO);
+                    close(fd);
+
+                    cmd_args[k] = NULL;  // Remove redirection from args
+                    //break;
+                } else if (strcmp(cmd_args[k], "<") == 0) {
+                    int fd = open(cmd_args[k + 1], O_RDONLY);
+                    if (fd < 0) syserror("open for input redirection");
+                    dup2(fd, STDIN_FILENO);
+                    close(fd);
+
+                    cmd_args[k] = NULL;
+                    //break;
+                }
+            }
+
+            //printf("at bottom\n");
             execvp(cmd_args[0], cmd_args);
+            fprintf(stderr, "Exec #%d: %s\n", i, cmd_args[0]);
             syserror("Could not exec command");
         }
     }

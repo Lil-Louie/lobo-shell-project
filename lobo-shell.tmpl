@@ -1,32 +1,52 @@
 --------------------------------------------------------------------------
 
-            +-------------------------+
-            | CS 450                  |
-            | PROJECT: LOBO SHELL     |
-            | DESIGN DOCUMENT         |
-            +-------------------------+
+
+
+
+           +-------------------------+
+           | CS 450                  |
+           | PROJECT: LOBO SHELL     |
+           | DESIGN DOCUMENT         |
+           +-------------------------+
+
 
 ---- GROUP ----
 
+
 >> Fill in the names and email addresses of your group members.
 
+
 Luis Galvez galvezdiaz@sonoma.edu
+Cristian Villalobos villaloboc@sonoma.edu
+Irving Lopez lopezirv@sonoma.edu
+
+
 FirstName LastName <email@domain.example>
+
 
 ---- PRELIMINARIES ----
 
+
 >> If you have any preliminary comments on your submission or
 >> bug notes for the course staff, please give them here.
+
+
+We implemented input and output redirection, single + multiple pipes, and argument parsing quoted strings.
+
 
 >> Please cite any offline or online sources you consulted while
 >> preparing your submission, other than man pages, course
 >> text, lecture notes, and course staff.
 
 
-               LOBO SHELL
-               ==========
+
+
+              LOBO SHELL
+              ==========
+
 
 ---- EXPLORE THE PROBLEM ----
+
 
 >> A1: To open a file for I/O re-direction requires various flags
 >> and parameters passed to the open() call. Explore bash as an
@@ -34,68 +54,208 @@ FirstName LastName <email@domain.example>
 >>     open(bar,...)
 >> for each of these scenarios:
 >>   (i) foo > bar
+   open("bar", O_WRONLY | O_CREAT | O_TRUNC, 0644)
 >>  (ii) foo < bar
+   open("bar", O_RDONLY)
 >> (iii) foo >> bar
+   open("bar", O_WRONLY | O_CREAT | O_APPEND, 0644)
+
+
+
+
+
+
+
 
 >> A2: Create scenarios to test and describe how bash behaves in
 >> each of these scenarios:
 >>   (i) foo < bar, when "bar" does not exist?
+    Command: wc -l < nofile.txt
+    output:
+    open for input redirection: No such file or directory
 >>  (ii) foo < bar, when "bar" exists but you lack permission to read it?
->> (iii) foo > bar, when "bar" exists but you lack permission to write it?
->>  (iv) foo > bar, when "bar" cannot be created?
->> In each case, give the commands you used to create and evaluate 
->> the scenario.
+   Command:
+   touch readonly.txt
+   chmod 000 readonly.txt
+   wc -l < readonly.txt
+   Output:
+   open for input redirection: Permission denied
 
+
+>> (iii) foo > bar, when "bar" exists but you lack permission to write it?
+   touch nowrite.txt
+   chmod 444 nowrite.txt
+   echo "test" > nowrite.txt
+
+
+   output:
+   open for output redirection: Permission denied
+
+
+>>  (iv) foo > bar, when "bar" cannot be created?
+>> In each case, give the commands you used to create and evaluate
+>> the scenario.
+     Command:
+     mkdir /rootonly
+     echo "test" > /rootonly/file.txt
+     Output:
+     open for output redirection: No such file or directory
 >> A3: Unix pipes allow synchronization among processes to facilitate
 >> interprocess communication (IPC). Consider a pipeline of arbitrary
 >> length, like:
 >>     P[0] | P[1] | ... | P[i-1] | P[i] | P[i+1] | ... | P[n]
 >> Imagine a loop, like:
->>     for i in 0 .. n: 
+>>     for i in 0 .. n:
 >>         set-up-pipeline-for( process P[i] )
 >> What prior-created pipes would be used with process P[i]?
+	The previously created pipeline that we need in order to process P[i] is just P[i-1][0]
 >> What new pipes need to be created to set up P[i]'s pipeline?
+	The pipeline that need to be created to set up P[i]’s pipeline is P[i][1]
+
+
+
 
 ---- DATA STRUCTURES ----
+
 
 >> A4: Copy here the declaration of each new `struct',
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 25 words or less.
 
+
+No new structs were declared.
+All data used in the shell is from local arrays and ptrs inside functions.
+
+
+
+
 ---- FUNCTIONS ----
+
 
 >> A5: Provide a prototype and documentation for each function
 >> you have introduced to support this portion of the project.
 >> Use the Google Style Guide for function documentation.
 
+
+/**
+ * This function modifies the input string by trimming
+ * whitespace from both ends.
+ *
+ * @paramater str Pointer to the string to be trimmed.
+ * @return Pointer to the trimmed string.
+ */
+char* trim(char* str);
+
+
+/**
+ * Parses a command line string and populates an array with pointers
+ * to individual words separated by whitespaces
+ *
+ * @param line: The command line input string.
+ * @param list_to_populate: Array to populate with words.
+ * @return Number of words parsed.
+ */
+int split_cmd_line(char* line, char** list_to_populate);
+
+
+/**
+ * Tokenizes the input line using the pipe '|' symbol. Populates the array with individual commands.
+ *
+ * @param line: The input command line.
+ * @param list_of_cmds: Array to populate with command strings.
+ * @return Number of commands.
+ */
+int split_pipes(char* line, char** list_of_cmds);
+
+
+/**
+ * Sets up pipes between processes and forks child processes to execute
+ * each command in the pipeline. Supports basic I/O redirection.
+ *
+ * @param list_of_cmds Array of command strings.
+ * @param num_cmds Number of commands in the pipeline.
+ */
+void execute_piped_commands(char** list_of_cmds, int num_cmds);
+
+
+/**
+ * Outputs a custom error message along with the system error string
+ * associated with `errno`, then exits the program.
+ *
+ * @param s The custom error message to display.
+ */
+void syserror(const char* s);
+
+
+
+
+
+
+
+
 ---- ALGORITHMS ----
+
 
 >> A6: Briefly describe how the functions (from A3) are called
 >> when your shell is processing the user-entered commands:
 >>   foo 1 2 | bar 3 4
+1) main()reads the input and uses split_pipes() to split this into
+“foo 1 2” and “bar 3 4.
+2) then it calls execute_piped_commands with these commands
+3) then inside execute_piped_commands()pipes are created, each command is parsed by split_cmd_line, redirection is handled, and all commands are execvp’d in a forked process.
+
 
 >> A7: Briefly describe your approch for reaping child processes. When do
 >> you reap, and how much do you reap at a time? Would it be possible to
 >> reap children earlier than your current implementation and, if so,
 >> what situations might that benefit?
 
+
+All children are reaped at the end of execute_piped_commands()by using
+waitpid(pids[i], NULL, 0);
+This makes sure that all the children finish before the shell continues.
+Early reaping isn’t needed or in use but it could be used to reduce the risk of zombies in long running background tasks
+
+
+
+
 ---- RATIONALE ----
+
 
 >> A8: Does any aspect of our shell require multithreading or related
 >> synchronization primitives (locks, semaphores)? Is the bash shell
 >> (http://git.savannah.gnu.org/cgit/bash.git/) multithreaded?
 >> What did you grep to determine the answer?
+There is no multithreading in our shell or another synchronization primitive.
+BASH does not perform multithreading normally.
 
->> A9: Develop a new test, not covered by existing tests. Provide the 
->> code implementing that test. When possible, follow the format of 
->> existing tests. Explain what functionality it tests and how it goes 
+
+
+
+>> A9: Develop a new test, not covered by existing tests. Provide the
+>> code implementing that test. When possible, follow the format of
+>> existing tests. Explain what functionality it tests and how it goes
 >> beyond the provided tests.
+This is the test:
+
+
+touch "| cat"
+echo "Hello" > "| cat"
+cat "| cat"
+
+
+output:
+Hello
+
+
+Purpose: checks if the shell handles file names with special characters in quotes. This test goes beyond the provided test because it preserves quoted strings during parsing and doesn't detect the special characters in the quote such as the pipe in the filename “| cat”
 
 
 
 
-               SURVEY QUESTIONS
-               ================
+              SURVEY QUESTIONS
+              ================
+
 
 Answering these questions is optional, but it will help us improve the
 course in future quarters.  Feel free to tell us anything you
@@ -103,14 +263,18 @@ want--these questions are just to spur your thoughts.  You may also
 choose to respond anonymously in the course evaluations at the end of
 the quarter.
 
+
 >> In your opinion, was this assignment, or any one of the problems
 >> in it, too easy or too hard?  Did it take too long or too little time?
+
 
 >> Did you find that working on a particular part of the assignment gave
 >> you greater insight into some aspect of OS design?
 
+
 >> Is there some particular fact or hint we should give students in
 >> future quarters to help them solve the problems?  Conversely, did you
 >> find any of our guidance to be misleading?
+
 
 >> Any other comments?

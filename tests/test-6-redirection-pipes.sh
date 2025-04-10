@@ -43,6 +43,6 @@ echo "---------" >> $LOG
 
 diff $EOUT $OUT >/dev/null || { echo "FAIL $TEST"; exit 1; }
 
-diff tests/output/etmp tests/output/tmp >>$LOG 2>&1 || { echo "FAIL $TEST"; exit 2; }
+diff testsss/output/etmp testsss/output/tmp >>$LOG 2>&1 || { echo "FAIL $TEST"; exit 2; }
 echo "PASS $TEST"
 
